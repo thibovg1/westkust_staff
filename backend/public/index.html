@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Server Beheer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;550;600;650;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    
+    
+    <!-- Discord Login -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <div class="login-logo"><i class="fab fa-discord"></i></div>
+            <h1>Admin Panel</h1>
+            <p class="subtitle">Log in met Discord. Je rank wordt bepaald via je Discord-rollen of een handmatige toewijzing.</p>
+            <div id="authError" class="auth-error" style="display:none"></div>
+            <a class="btn-discord" id="discordLoginBtn" href="/api/auth/discord">
+                <i class="fab fa-discord"></i>
+                Inloggen met Discord
+            </a>
+            <p class="login-hint">Alleen leden van de geconfigureerde Discord-server met een gekoppelde rank krijgen toegang.</p>
+        </div>
+    </div>
+
+    <div class="app" id="app">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo"><i class="fas fa-shield-halved"></i></div>
+                <span class="sidebar-title">Server</span>
+            </div>
+            <div class="sidebar-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Zoeken...">
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-home"></i> Dashboard</a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Staff <i class="fas fa-chevron-down"></i></div>
+                    <div class="nav-items">
+                        <a href="#" class="nav-link" data-section="spelers"><i class="fas fa-users"></i> Spelers</a>
+                        <a href="#" class="nav-link" data-section="moderatie"><i class="fas fa-gavel"></i> Moderatie</a>
+                        <a href="#" class="nav-link" data-section="monitoring"><i class="fas fa-desktop"></i> Monitoring</a>
+                        <a href="#" class="nav-link" data-section="ingame-map"><i class="fas fa-map"></i> Ingame Map</a>
+                        <a href="#" class="nav-link" data-section="opzoeken"><i class="fas fa-search"></i> Opzoeken</a>
+                        <a href="#" class="nav-link" data-section="warns"><i class="fas fa-exclamation-triangle"></i> Warns</a>
+                        <a href="#" class="nav-link" data-section="kicks"><i class="fas fa-boot"></i> Kicks</a>
+                        <a href="#" class="nav-link" data-section="bans"><i class="fas fa-ban"></i> Bans</a>
+                        <a href="#" class="nav-link" data-section="support"><i class="fas fa-ticket-alt"></i> Support & Tickets</a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Hogerop <i class="fas fa-chevron-down"></i></div>
+                    <div class="nav-items">
+                        <a href="#" class="nav-link" data-section="voertuigen"><i class="fas fa-car"></i> Voertuigen</a>
+                        <a href="#" class="nav-link" data-section="economie"><i class="fas fa-coins"></i> Economie & Items</a>
+                        <a href="#" class="nav-link" data-section="frakties"><i class="fas fa-users-cog"></i> Frakties & Jobs</a>
+                        <a href="#" class="nav-link" data-section="communicatie"><i class="fas fa-bullhorn"></i> Communicatie</a>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Beheer <i class="fas fa-chevron-down"></i></div>
+                    <div class="nav-items">
+                        <a href="#" class="nav-link" data-section="whitelist"><i class="fas fa-user-shield"></i> Whitelist & AC</a>
+                        <a href="#" class="nav-link" data-section="server"><i class="fas fa-server"></i> Server</a>
+                        <a href="#" class="nav-link" data-section="automatisering"><i class="fas fa-robot"></i> Automatisering</a>
+                        <a href="#" class="nav-link" data-section="permissions"><i class="fas fa-user-lock"></i> Permissies</a>
+                        <a href="#" class="nav-link" data-section="instellingen"><i class="fas fa-cog"></i> Instellingen</a>
+                        <a href="#" class="nav-link" data-section="todo"><i class="fas fa-list-check"></i> To-Do Lijst</a>
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-user" id="sidebarUser">
+                <div class="avatar" id="userAvatar" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6)">?</div>
+                <div class="user-info">
+                    <div class="name" id="userName">Niet ingelogd</div>
+                    <div class="rank" id="userRank"></div>
+                </div>
+                <button class="logout-btn" id="logoutBtn" title="Uitloggen"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <div class="main">
+            <header class="topbar">
+                <button class="mobile-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+            </header>
+
+            <div class="content">
+                </div>
+
+
+                <!-- DASHBOARD -->
+                <section id="dashboard" class="section active">
+                    <div class="server-header">
+                        <div class="server-info-card">
+                            <div class="server-info-left">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:2px">
+                                    <h1>Server</h1>
+                                    <span class="badge badge-online">Online</span>
+                                </div>
+                                <p>FiveM Admin Panel</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card chart-main mb-20">
+                        <div class="card-title">Online spelers</div>
+                        <div class="chart-value">9/100</div>
+                        <div class="chart-container"><canvas id="playerChart"></canvas></div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-label">Warns</div>
+                            <div class="stat-value" style="color:var(--yellow)">30</div>
+                            <div class="mini-chart"><canvas id="warnsChart"></canvas></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Kicks</div>
+                            <div class="stat-value" style="color:var(--orange)">32</div>
+                            <div class="mini-chart"><canvas id="kicksChart"></canvas></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Bans</div>
+                            <div class="stat-value" style="color:var(--red)">29</div>
+                            <div class="mini-chart"><canvas id="bansChart"></canvas></div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="action-btn" data-perm="beheer"><i class="fas fa-car"></i> Verwijder voertuigen <span class="perm perm-beheer">Beheer</span></button>
+                            <button class="action-btn" data-perm="beheer"><i class="fas fa-walking"></i> Verwijder peds <span class="perm perm-beheer">Beheer</span></button>
+                            <button class="action-btn" data-perm="beheer"><i class="fas fa-cube"></i> Verwijder objecten <span class="perm perm-beheer">Beheer</span></button>
+                            <button class="action-btn" data-perm="beheer"><i class="fas fa-bullhorn"></i> Verstuur aankondiging <span class="perm perm-beheer">Beheer</span></button>
+                        </div>
+                    </div>
+                    <div class="time-range">
+                        <button class="active">24H</button>
+                        <button>7D</button>
+                        <button>30D</button>
+                    </div>
+                </section>
+
+                <!-- SPELERS -->
+                <section id="spelers" class="section">
+                    <div class="page-header"><h2>Spelers</h2><p>Online spelers beheren en bekijken</p></div>
+                    <div class="card mb-16">
+                        <div class="form-row" style="margin-bottom:16px">
+                            <input type="text" class="form-control" placeholder="Zoek op naam, ID, Discord, Steam...">
+                            <button class="btn btn-primary"><i class="fas fa-search"></i> Zoeken</button>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <div class="left"><span class="status-dot online"></span><span style="font-weight:500">PlayerX</span><span style="color:var(--text-muted);font-size:12px">ID: 42</span></div>
+                                <div style="display:flex;gap:6px">
+                                    <button class="btn btn-sm btn-outline" data-perm="staff">Spectate</button>
+                                    <button class="btn btn-sm btn-warning" data-perm="staff">Warn</button>
+                                    <button class="btn btn-sm btn-danger" data-perm="staff">Kick</button>
+                                </div>
+                            </div>
+                            <div class="data-item">
+                                <div class="left"><span class="status-dot online"></span><span style="font-weight:500">SpelerY</span><span style="color:var(--text-muted);font-size:12px">ID: 87</span></div>
+                                <div style="display:flex;gap:6px">
+                                    <button class="btn btn-sm btn-outline" data-perm="staff">Spectate</button>
+                                    <button class="btn btn-sm btn-warning" data-perm="staff">Warn</button>
+                                    <button class="btn btn-sm btn-danger" data-perm="staff">Kick</button>
+                                </div>
+                            </div>
+                            <div class="data-item">
+                                <div class="left"><span class="status-dot online"></span><span style="font-weight:500">NewPlayer</span><span style="color:var(--text-muted);font-size:12px">ID: 103</span></div>
+                                <div style="display:flex;gap:6px">
+                                    <button class="btn btn-sm btn-outline" data-perm="staff">Spectate</button>
+                                    <button class="btn btn-sm btn-warning" data-perm="staff">Warn</button>
+                                    <button class="btn btn-sm btn-danger" data-perm="staff">Kick</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODERATIE -->
+                <section id="moderatie" class="section">
+                    <div class="page-header"><h2>Moderatie & Spelerbeheer</h2><p>Kick, ban, warn, spectate en meer</p></div>
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-user-cog"></i> Speler Interacties</span></div>
+                            <div class="feature-grid">
+                                <button class="feature-btn btn-yellow" data-perm="staff"><i class="fas fa-exclamation-triangle"></i><span>Warn</span><span class="perm perm-staff">Staff</span></button>
+                                <button class="feature-btn btn-orange" data-perm="staff"><i class="fas fa-boot"></i><span>Kick</span><span class="perm perm-staff">Staff</span></button>
+                                <button class="feature-btn btn-red" data-perm="staff"><i class="fas fa-ban"></i><span>Ban (Tijdelijk)</span><span class="perm perm-staff">Staff</span></button>
+                                <button class="feature-btn btn-red" data-perm="hogerop"><i class="fas fa-skull-crossbones"></i><span>Ban (Permanent)</span><span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="feature-btn btn-purple" data-perm="beheer"><i class="fas fa-microchip"></i><span>HWID Ban</span><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="feature-btn btn-green" data-perm="staff"><i class="fas fa-heart"></i><span>Heal</span><span class="perm perm-staff">Staff</span></button>
+                                <button class="feature-btn btn-cyan" data-perm="staff"><i class="fas fa-plus-circle"></i><span>Revive</span><span class="perm perm-staff">Staff</span></button>
+                                <button class="feature-btn btn-red" data-perm="staff"><i class="fas fa-skull"></i><span>Kill</span><span class="perm perm-staff">Staff</span></button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-box-open"></i> Privileges Strip</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="hogerop"><div class="icon red"><i class="fas fa-trash"></i></div><div class="text"><h4>Clear Inventory</h4><p>Inventaris volledig leegmaken</p></div><span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn-full" data-perm="hogerop"><div class="icon green"><i class="fas fa-money-bill-wave"></i></div><div class="text"><h4>Geld Afpakken</h4><p>Bank / Contant / Zwart geld</p></div><span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn-full" data-perm="staff"><div class="icon yellow"><i class="fas fa-handcuffs"></i></div><div class="text"><h4>Handboeien</h4><p>Speler vastzetten of losmaken</p></div><span class="perm perm-staff">Staff</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="fas fa-eye"></i> Spectate & Surveillance</span></div>
+                        <div class="feature-grid mb-16">
+                            <button class="feature-btn btn-cyan" data-perm="staff"><i class="fas fa-video"></i><span>Live Camera Stream</span><small>30 sec video + screenshot</small><span class="perm perm-staff">Staff</span></button>
+                            <button class="feature-btn btn-blue" data-perm="staff"><i class="fas fa-desktop"></i><span>Screen Capture</span><small>Screenshot van scherm</small><span class="perm perm-staff">Staff</span></button>
+                            <button class="feature-btn btn-green" data-perm="staff"><i class="fas fa-list-alt"></i><span>Live Player Log</span><small>Voertuig, snelheid, wapen...</small><span class="perm perm-staff">Staff</span></button>
+                        </div>
+                        <div class="live-log">
+                            <div><span class="ts">[14:32:01]</span> <span class="player">PlayerX</span> → In voertuig: <span class="val-green">T20</span> | Snelheid: <span class="val-yellow">180 km/h</span></div>
+                            <div><span class="ts">[14:32:05]</span> <span class="player">PlayerX</span> → Wapen: <span class="val-red">Micro SMG</span> | Health: <span class="val-green">100</span> | Armor: <span class="val-purple">50</span></div>
+                            <div><span class="ts">[14:32:12]</span> <span class="player">PlayerX</span> → Locatie: <span class="val-purple">Legion Square</span> | Status: <span class="val-green">Alive</span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MONITORING -->
+                <section id="monitoring" class="section">
+                    <div class="page-header"><h2>Realtime Monitoring</h2><p>Server status, analytics en live data</p></div>
+                    <div class="grid-4 mb-20">
+                        <div class="card">
+                            <div class="card-title" style="margin-bottom:8px">CPU Gebruik</div>
+                            <div style="font-size:24px;font-weight:700">23%</div>
+                            <div class="progress-bar"><div class="fill blue" style="width:23%"></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title" style="margin-bottom:8px">RAM Gebruik</div>
+                            <div style="font-size:24px;font-weight:700">67%</div>
+                            <div class="progress-bar"><div class="fill yellow" style="width:67%"></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title" style="margin-bottom:8px">FPS / Tickrate</div>
+                            <div style="font-size:24px;font-weight:700">58 <span style="font-size:13px;color:var(--text-muted)">FPS</span></div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Tickrate: 58ms</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title" style="margin-bottom:8px">Spelers / Queue</div>
+                            <div style="font-size:24px;font-weight:700">128<span style="font-size:13px;color:var(--text-muted)">/200</span></div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Queue: 3 spelers</div>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-trophy"></i> Leaderboards</span></div>
+                            <div class="lb-section">
+                                <h4>Playtime Top 5</h4>
+                                <div class="leaderboard">
+                                    <div class="lb-item"><span class="rank-1">1. PlayerOne</span><span class="score">342u</span></div>
+                                    <div class="lb-item"><span class="rank-other">2. GamerPro</span><span class="score">298u</span></div>
+                                    <div class="lb-item"><span class="rank-other">3. RPKing</span><span class="score">276u</span></div>
+                                    <div class="lb-item"><span class="rank-other">4. NightOwl</span><span class="score">251u</span></div>
+                                    <div class="lb-item"><span class="rank-other">5. StreetLegend</span><span class="score">230u</span></div>
+                                </div>
+                            </div>
+                            <div class="lb-section">
+                                <h4>Rijkste Spelers</h4>
+                                <div class="leaderboard">
+                                    <div class="lb-item"><span class="rank-1">1. MoneyBags</span><span class="score">€45.2M</span></div>
+                                    <div class="lb-item"><span class="rank-other">2. RichDude</span><span class="score">€38.7M</span></div>
+                                    <div class="lb-item"><span class="rank-other">3. CashFlow</span><span class="score">€31.1M</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-history"></i> Recente Activiteit</span></div>
+                            <div class="data-list">
+                                <div class="data-item">
+                                    <div class="left">
+                                        <div style="width:28px;height:28px;border-radius:6px;background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--red)"><i class="fas fa-ban"></i></div>
+                                        <div><span style="font-weight:500">Admin_John</span> heeft PlayerX geband<br><span style="font-size:11px;color:var(--text-muted)">2 min geleden</span></div>
+                                    </div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left">
+                                        <div style="width:28px;height:28px;border-radius:6px;background:rgba(234,179,8,0.12);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--yellow)"><i class="fas fa-exclamation"></i></div>
+                                        <div>Nieuw report van <span style="font-weight:500">SpelerY</span><br><span style="font-size:11px;color:var(--text-muted)">5 min geleden</span></div>
+                                    </div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left">
+                                        <div style="width:28px;height:28px;border-radius:6px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--green)"><i class="fas fa-car"></i></div>
+                                        <div><span style="font-weight:500">Moderator_Sam</span> spawnte T20<br><span style="font-size:11px;color:var(--text-muted)">12 min geleden</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INGAME MAP -->
+                <section id="ingame-map" class="section">
+                    <div class="page-header"><h2>Ingame Map</h2><p>Live kaart met alle spelers — GTA V + Roxwood + Cayo Perico</p></div>
+                    <div class="card">
+                        <div class="map-placeholder">
+                            <div class="map-grid"></div>
+                            <div style="text-align:center;z-index:2;position:relative">
+                                <i class="fas fa-map-marked-alt" style="font-size:36px;color:#334155;margin-bottom:8px;display:block"></i>
+                                <p style="color:var(--text-muted);font-size:13px">Interactieve Live Map</p>
+                                <p style="color:var(--text-muted);font-size:11px;margin-top:4px">Blips voor Politie, Ambulance, Spelers & Panic Buttons</p>
+                            </div>
+                            <div class="map-blip" style="top:25%;left:30%;width:10px;height:10px;background:var(--accent);box-shadow:0 0 8px var(--accent)"></div>
+                            <div class="map-blip" style="top:50%;left:48%;width:10px;height:10px;background:var(--red);box-shadow:0 0 8px var(--red)"></div>
+                            <div class="map-blip" style="top:35%;right:30%;width:7px;height:7px;background:var(--green)"></div>
+                            <div class="map-blip" style="bottom:30%;left:25%;width:7px;height:7px;background:var(--green)"></div>
+                            <div class="map-blip" style="top:60%;right:28%;width:8px;height:8px;background:var(--yellow)"></div>
+                        </div>
+                        <div class="map-legend">
+                            <span><span class="dot" style="background:var(--accent)"></span> Politie</span>
+                            <span><span class="dot" style="background:var(--red)"></span> Ambulance</span>
+                            <span><span class="dot" style="background:var(--green)"></span> Spelers</span>
+                            <span><span class="dot" style="background:var(--yellow)"></span> Panic Button</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- OPZOEKEN -->
+                <section id="opzoeken" class="section">
+                    <div class="page-header"><h2>Speler Opzoeken</h2><p>Zoek op naam, ID, Discord, Steam, License of IP</p></div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <input type="text" class="form-control mb-16" placeholder="Zoek: Naam, ID, Discord, Steam, License, IP...">
+                            <div class="player-card">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                                    <div class="player-avatar">PX</div>
+                                    <div>
+                                        <div style="font-weight:600">PlayerX</div>
+                                        <div style="font-size:12px;color:var(--text-muted)">ID: 42 · Discord: playerx#1234</div>
+                                    </div>
+                                </div>
+                                <div class="stat-grid">
+                                    <div class="stat-box"><div class="sl">Speeltijd</div><div class="sv">156 uur</div></div>
+                                    <div class="stat-box"><div class="sl">K/D</div><div class="sv">23 / 45</div></div>
+                                    <div class="stat-box"><div class="sl">Bans</div><div class="sv" style="color:var(--red)">2</div></div>
+                                    <div class="stat-box"><div class="sl">Warnings</div><div class="sv" style="color:var(--yellow)">5</div></div>
+                                </div>
+                                <div style="font-size:12px;margin-bottom:8px"><span style="color:var(--text-muted)">Karakters:</span> John Doe · Mike Smith</div>
+                                <div style="font-size:12px;margin-bottom:12px"><span style="color:var(--text-muted)">Staff Notitie:</span> <span style="color:var(--yellow);font-style:italic">"Let op: Verdacht van dupen"</span></div>
+                                <button class="btn btn-primary btn-block btn-sm">Volledig Dossier Openen</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-sticky-note"></i> Admin Notities</span></div>
+                            <div class="form-group"><label>Speler</label><input type="text" class="form-control" placeholder="Speler ID of naam"></div>
+                            <div class="form-group"><label>Notitie</label><textarea class="form-control" rows="3" placeholder="Interne notitie..."></textarea></div>
+                            <button class="btn btn-warning btn-block" data-perm="staff">Notitie Opslaan <span class="perm perm-staff">Staff</span></button>
+                            <button class="btn btn-outline btn-block mt-12" data-perm="hogerop">Staff Actie Geschiedenis <span class="perm perm-hogerop">Hogerop</span></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- WARNS -->
+                <section id="warns" class="section">
+                    <div class="page-header"><h2>Warns</h2><p>Alle waarschuwingen overzicht</p></div>
+                    <div class="card">
+                        <div class="data-list">
+                            <div class="data-item">
+                                <div class="left"><span style="color:var(--yellow)"><i class="fas fa-exclamation-triangle"></i></span><div><span style="font-weight:500">PlayerX</span> — RDM<br><span style="font-size:11px;color:var(--text-muted)">Door Admin_John · 2 uur geleden</span></div></div>
+                                <button class="btn btn-sm btn-outline">Details</button>
+                            </div>
+                            <div class="data-item">
+                                <div class="left"><span style="color:var(--yellow)"><i class="fas fa-exclamation-triangle"></i></span><div><span style="font-weight:500">SpelerY</span> — Fail RP<br><span style="font-size:11px;color:var(--text-muted)">Door Mod_Sam · 5 uur geleden</span></div></div>
+                                <button class="btn btn-sm btn-outline">Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- KICKS -->
+                <section id="kicks" class="section">
+                    <div class="page-header"><h2>Kicks</h2><p>Alle kicks overzicht</p></div>
+                    <div class="card">
+                        <div class="data-list">
+                            <div class="data-item">
+                                <div class="left"><span style="color:var(--orange)"><i class="fas fa-boot"></i></span><div><span style="font-weight:500">ToxicPlayer</span> — Toxic gedrag<br><span style="font-size:11px;color:var(--text-muted)">Door Admin_John · 1 uur geleden</span></div></div>
+                                <button class="btn btn-sm btn-outline">Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BANS -->
+                <section id="bans" class="section">
+                    <div class="page-header"><h2>Bans</h2><p>Alle bans overzicht</p></div>
+                    <div class="card">
+                        <div class="data-list">
+                            <div class="data-item">
+                                <div class="left"><span style="color:var(--red)"><i class="fas fa-ban"></i></span><div><span style="font-weight:500">Cheater123</span> — Cheat detectie (permanent)<br><span style="font-size:11px;color:var(--text-muted)">Door System · 30 min geleden</span></div></div>
+                                <button class="btn btn-sm btn-outline">Details</button>
+                            </div>
+                            <div class="data-item">
+                                <div class="left"><span style="color:var(--red)"><i class="fas fa-ban"></i></span><div><span style="font-weight:500">PlayerX</span> — RDM (7 dagen)<br><span style="font-size:11px;color:var(--text-muted)">Door Admin_John · 2 min geleden</span></div></div>
+                                <button class="btn btn-sm btn-outline">Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VOERTUIGEN -->
+                <section id="voertuigen" class="section">
+                    <div class="page-header"><h2>Voertuigbeheer</h2><p>Spawn, despawn, eigendom en aanpassingen</p></div>
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-car-side"></i> Spawn & Despawn</span></div>
+                            <div class="form-group"><label>Model / Nummerplaat</label><input type="text" class="form-control" placeholder="bijv. t20 of AB-123-CD"></div>
+                            <div class="form-group"><label>Speler ID</label><input type="text" class="form-control" placeholder="Server ID of Identifier"></div>
+                            <div class="form-row" style="margin-bottom:10px">
+                                <button class="btn btn-success" style="flex:1" data-perm="staff"><i class="fas fa-plus"></i> Spawn bij Speler <span class="perm perm-staff">Staff</span></button>
+                                <button class="btn btn-primary" style="flex:1" data-perm="beheer"><i class="fas fa-database"></i> Toevoegen aan DB <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                            <button class="btn btn-danger btn-block" data-perm="beheer"><i class="fas fa-trash"></i> Verwijder uit Database (DV) <span class="perm perm-beheer">Beheer</span></button>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-id-card"></i> Custom Kenteken</span></div>
+                            <div class="form-group"><label>Huidig Kenteken</label><input type="text" class="form-control" placeholder="Oud kenteken"></div>
+                            <div class="form-group"><label>Nieuw Kenteken</label><input type="text" class="form-control" placeholder="Nieuw kenteken"></div>
+                            <button class="btn btn-warning btn-block" data-perm="beheer"><i class="fas fa-sync-alt"></i> Kenteken Overschrijven <span class="perm perm-beheer">Beheer</span></button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="fas fa-key"></i> Eigendom & Sleutels</span></div>
+                        <div class="feature-grid">
+                            <button class="feature-btn btn-blue" data-perm="hogerop"><i class="fas fa-user-tag"></i><span>Toewijzen aan Speler</span><small>Kenteken + Speler ID</small><span class="perm perm-hogerop">Hogerop</span></button>
+                            <button class="feature-btn btn-green" data-perm="hogerop"><i class="fas fa-exchange-alt"></i><span>Overdragen</span><small>Speler A → Speler B</small><span class="perm perm-hogerop">Hogerop</span></button>
+                            <button class="feature-btn btn-orange" data-perm="hogerop"><i class="fas fa-warehouse"></i><span>Impound Beheer</span><small>In/uit impound</small><span class="perm perm-hogerop">Hogerop</span></button>
+                            <button class="feature-btn btn-yellow" data-perm="hogerop"><i class="fas fa-key"></i><span>Sleutels Beheren</span><small>Genereren of afpakken</small><span class="perm perm-hogerop">Hogerop</span></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ECONOMIE -->
+                <section id="economie" class="section">
+                    <div class="page-header"><h2>Economie, Inventaris & Items</h2><p>Geldbeheer, items en woningen</p></div>
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-money-bill-wave"></i> Geldbeheer</span></div>
+                            <div style="display:flex;gap:6px;margin-bottom:12px">
+                                <button class="btn btn-sm btn-success" style="flex:1">Contant</button>
+                                <button class="btn btn-sm btn-primary" style="flex:1">Bank</button>
+                                <button class="btn btn-sm btn-warning" style="flex:1">Zwart</button>
+                            </div>
+                            <div class="form-row" style="margin-bottom:10px">
+                                <input type="text" class="form-control" placeholder="Speler ID / License">
+                                <input type="number" class="form-control" placeholder="Bedrag" style="max-width:120px">
+                            </div>
+                            <div class="form-row" style="margin-bottom:10px">
+                                <button class="btn btn-success" style="flex:1" data-perm="hogerop"><i class="fas fa-plus"></i> Toevoegen <span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn btn-danger" style="flex:1" data-perm="hogerop"><i class="fas fa-minus"></i> Verwijderen <span class="perm perm-hogerop">Hogerop</span></button>
+                            </div>
+                            <button class="btn btn-outline btn-block" data-perm="staff"><i class="fas fa-history"></i> Transactiehistorie (Laatste 50) <span class="perm perm-staff">Staff</span></button>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-box"></i> Item Beheer</span></div>
+                            <div class="form-group">
+                                <label>Zoek Item</label>
+                                <select class="form-control">
+                                    <option>Selecteer item...</option>
+                                    <option>weapon_pistol</option>
+                                    <option>weapon_smg</option>
+                                    <option>bread</option>
+                                    <option>water</option>
+                                    <option>lockpick</option>
+                                    <option>phone</option>
+                                </select>
+                            </div>
+                            <div class="form-row" style="margin-bottom:10px">
+                                <input type="text" class="form-control" placeholder="Speler ID">
+                                <input type="number" class="form-control" placeholder="Aantal" style="max-width:80px">
+                            </div>
+                            <div class="form-row" style="margin-bottom:10px">
+                                <button class="btn btn-success" style="flex:1" data-perm="hogerop">Geef aan Speler <span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn btn-primary" style="flex:1" data-perm="hogerop">Naar Kofferbak <span class="perm perm-hogerop">Hogerop</span></button>
+                            </div>
+                            <button class="btn btn-outline btn-block" data-perm="staff"><i class="fas fa-search"></i> Live Inventaris Bekijken <span class="perm perm-staff">Staff</span></button>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-boxes"></i> Live Inventaris & Opslag</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="staff"><div class="icon blue"><i class="fas fa-user"></i></div><div class="text"><h4>Speler Inventaris</h4><p>Items, wapens, durability</p></div><span class="perm perm-staff">Staff</span></button>
+                                <button class="btn-full" data-perm="hogerop"><div class="icon green"><i class="fas fa-car"></i></div><div class="text"><h4>Voertuig Kofferbak</h4><p>Doorzoeken & leeghalen</p></div><span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn-full" data-perm="hogerop"><div class="icon purple"><i class="fas fa-home"></i></div><div class="text"><h4>Appartement / Stash</h4><p>Koffers, kisten doorzoeken</p></div><span class="perm perm-hogerop">Hogerop</span></button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-house-user"></i> Woningen & Garages</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="beheer"><div class="icon yellow"><i class="fas fa-key"></i></div><div class="text"><h4>Huis-sleutels Beheren</h4><p>Toewijzen / Verwijderen</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon orange"><i class="fas fa-box-open"></i></div><div class="text"><h4>Huisraad / Kluis</h4><p>Inzien en leegmaken</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon green"><i class="fas fa-exchange-alt"></i></div><div class="text"><h4>Eigendom Overdragen</h4><p>Of veilen</p></div><span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FRAKTIES -->
+                <section id="frakties" class="section">
+                    <div class="page-header"><h2>Frakties, Jobs & Groepen</h2><p>Job management, gangs en bedrijven</p></div>
+                    <div class="grid-3">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-briefcase"></i> Job Management</span></div>
+                            <div class="form-group"><label>Speler ID</label><input type="text" class="form-control" placeholder="Speler ID"></div>
+                            <div class="form-group"><label>Job</label>
+                                <select class="form-control"><option>Selecteer Job...</option><option>police</option><option>ambulance</option><option>mechanic</option><option>taxi</option><option>unemployed</option></select>
+                            </div>
+                            <div class="form-group"><label>Grade / Rank</label>
+                                <select class="form-control"><option>0 - Rookie</option><option>1 - Officer</option><option>2 - Sergeant</option><option>3 - Lieutenant</option><option>4 - Chief</option></select>
+                            </div>
+                            <div class="form-row" style="margin-bottom:8px">
+                                <button class="btn btn-success btn-sm" style="flex:1" data-perm="hogerop">Aannemen <span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn btn-danger btn-sm" style="flex:1" data-perm="hogerop">Ontslaan <span class="perm perm-hogerop">Hogerop</span></button>
+                            </div>
+                            <div class="form-row" style="margin-bottom:8px">
+                                <button class="btn btn-primary btn-sm" style="flex:1" data-perm="hogerop">Promoveren <span class="perm perm-hogerop">Hogerop</span></button>
+                                <button class="btn btn-warning btn-sm" style="flex:1" data-perm="hogerop">Degraderen <span class="perm perm-hogerop">Hogerop</span></button>
+                            </div>
+                            <button class="btn btn-outline btn-block btn-sm" data-perm="hogerop">Forceer On/Off Duty <span class="perm perm-hogerop">Hogerop</span></button>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-users"></i> Gang Beheer</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="beheer"><div class="icon purple"><i class="fas fa-sitemap"></i></div><div class="text"><h4>Gang Ranks</h4><p>Gelederen aanpassen</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon yellow"><i class="fas fa-vault"></i></div><div class="text"><h4>Gang Kluis / Stash</h4><p>Geld & inhoud beheren</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon green"><i class="fas fa-map-marked-alt"></i></div><div class="text"><h4>Territoria / Zones</h4><p>Overschrijven of toewijzen</p></div><span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-building"></i> Bedrijfsbeheer</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="beheer"><div class="icon green"><i class="fas fa-university"></i></div><div class="text"><h4>Bedrijfsbankrekeningen</h4><p>Inzien & geld overmaken</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="hogerop"><div class="icon orange"><i class="fas fa-file-invoice-dollar"></i></div><div class="text"><h4>Facturen / Boetes</h4><p>Inzien en kwijtschelden</p></div><span class="perm perm-hogerop">Hogerop</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- WHITELIST & AC -->
+                <section id="whitelist" class="section">
+                    <div class="page-header"><h2>Whitelist, Server Toegang & Anti-Cheat</h2><p>Toegangsbeheer en anti-cheat controlecentrum</p></div>
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-user-check"></i> Whitelist Beheer</span></div>
+                            <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+                                <button class="btn btn-sm btn-outline">Steam Hex</button>
+                                <button class="btn btn-sm btn-outline">Discord ID</button>
+                                <button class="btn btn-sm btn-outline">License</button>
+                                <button class="btn btn-sm btn-outline">Live ID / IP</button>
+                            </div>
+                            <div class="form-group"><input type="text" class="form-control" placeholder="Identifier invoeren..."></div>
+                            <div class="form-row">
+                                <button class="btn btn-success" style="flex:1" data-perm="beheer"><i class="fas fa-plus"></i> Toevoegen <span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn btn-danger" style="flex:1" data-perm="beheer"><i class="fas fa-minus"></i> Verwijderen <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-ban"></i> Ban-Systeem Extra's</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="beheer"><div class="icon red"><i class="fas fa-globe"></i></div><div class="text"><h4>Global Bans</h4><p>Ban op meerdere servers tegelijk</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon purple"><i class="fas fa-microchip"></i></div><div class="text"><h4>Hardware ID Blacklist</h4><p>HWID permanent blokkeren</p></div><span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="fas fa-shield-virus"></i> Anti-Cheat Controlecentrum</span></div>
+                        <div class="feature-grid mb-16">
+                            <button class="feature-btn btn-red" data-perm="hogerop"><i class="fas fa-exclamation-circle"></i><span>AC Triggers</span><small>Verdachte acties</small><span class="perm perm-hogerop">Hogerop</span></button>
+                            <button class="feature-btn btn-blue" data-perm="hogerop"><i class="fas fa-camera"></i><span>Screenshots</span><small>AC capture opvragen</small><span class="perm perm-hogerop">Hogerop</span></button>
+                            <button class="feature-btn btn-yellow" data-perm="hogerop"><i class="fas fa-flag"></i><span>Player Flags</span><small>Bekijken: Hogerop · Instellen: Beheer</small><span class="perm perm-hogerop">Hogerop+</span></button>
+                            <button class="feature-btn btn-cyan" data-perm="beheer"><i class="fas fa-cog"></i><span>AC Instellingen</span><small>Acties & thresholds</small><span class="perm perm-beheer">Beheer</span></button>
+                        </div>
+                        <div class="trigger-list">
+                            <div class="trigger-item critical">
+                                <div><span class="trigger-badge">CRITICAL</span> <span style="color:var(--accent)">PlayerX</span> vuurde 500 kogels in 1 seconde</div>
+                                <div class="trigger-actions"><button class="btn btn-sm btn-danger">Ban</button><button class="btn btn-sm btn-outline">Negeer</button></div>
+                            </div>
+                            <div class="trigger-item warning">
+                                <div><span class="trigger-badge">WARNING</span> <span style="color:var(--accent)">SpelerY</span> heeft Godmode gedetecteerd</div>
+                                <div class="trigger-actions"><button class="btn btn-sm btn-danger">Ban</button><button class="btn btn-sm btn-outline">Negeer</button></div>
+                            </div>
+                            <div class="trigger-item medium">
+                                <div><span class="trigger-badge">MEDIUM</span> <span style="color:var(--accent)">PlayerZ</span> verdachte geldtransactie (€15.000.000)</div>
+                                <div class="trigger-actions"><button class="btn btn-sm btn-danger">Ban</button><button class="btn btn-sm btn-warning">Wipe</button><button class="btn btn-sm btn-outline">Negeer</button></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SERVER -->
+                <section id="server" class="section">
+                    <div class="page-header"><h2>Server Infrastructure</h2><p>Resources, power controls en database interventies</p></div>
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-cogs"></i> Resource Management</span></div>
+                            <input type="text" class="form-control mb-16" placeholder="Zoek resource...">
+                            <div class="data-list">
+                                <div class="data-item">
+                                    <div class="left"><span class="status-dot online"></span><span style="font-family:monospace;font-size:12px">es_extended</span></div>
+                                    <div style="display:flex;gap:4px"><button class="btn btn-sm btn-warning" data-perm="beheer">Restart</button><button class="btn btn-sm btn-danger" data-perm="beheer">Stop</button></div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left"><span class="status-dot online"></span><span style="font-family:monospace;font-size:12px">qb-core</span></div>
+                                    <div style="display:flex;gap:4px"><button class="btn btn-sm btn-warning" data-perm="beheer">Restart</button><button class="btn btn-sm btn-danger" data-perm="beheer">Stop</button></div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left"><span class="status-dot warning"></span><span style="font-family:monospace;font-size:12px">ox_inventory</span></div>
+                                    <div style="display:flex;gap:4px"><button class="btn btn-sm btn-success" data-perm="beheer">Start</button><button class="btn btn-sm btn-warning" data-perm="beheer">Restart</button></div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left"><span class="status-dot online"></span><span style="font-family:monospace;font-size:12px">ox_lib</span></div>
+                                    <div style="display:flex;gap:4px"><button class="btn btn-sm btn-warning" data-perm="beheer">Restart</button><button class="btn btn-sm btn-danger" data-perm="beheer">Stop</button></div>
+                                </div>
+                            </div>
+                            <div class="form-row mt-16">
+                                <button class="btn btn-success btn-sm" style="flex:1" data-perm="beheer">Start <span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn btn-danger btn-sm" style="flex:1" data-perm="beheer">Stop <span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn btn-warning btn-sm" style="flex:1" data-perm="beheer">Restart <span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn btn-primary btn-sm" style="flex:1" data-perm="beheer">Ensure <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-power-off"></i> Server Power Controls</span></div>
+                            <div class="btn-row">
+                                <button class="btn-full" data-perm="beheer"><div class="icon red"><i class="fas fa-redo"></i></div><div class="text"><h4>Direct Herstarten</h4><p>Directe server restart</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon orange"><i class="fas fa-clock"></i></div><div class="text"><h4>Geplande Herstart</h4><p>Met live aftel-embed in Discord</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon yellow"><i class="fas fa-sync"></i></div><div class="text"><h4>Soft Restart (TxAdmin)</h4><p>Integrale soft restart</p></div><span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn-full" data-perm="beheer"><div class="icon purple"><i class="fas fa-lock"></i></div><div class="text"><h4>Server Lock / Onderhoud</h4><p>Alleen admins kunnen joinen</p></div><span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="fas fa-database"></i> Database Interventies</span></div>
+                        <div class="feature-grid">
+                            <button class="feature-btn btn-red" data-perm="beheer"><i class="fas fa-user-slash"></i><span>Character Kill (CK)</span><small>Character verwijderen</small><span class="perm perm-beheer">Beheer</span></button>
+                            <button class="feature-btn btn-blue" data-perm="beheer"><i class="fas fa-edit"></i><span>Naam / DOB / BSN</span><small>Gegevens wijzigen</small><span class="perm perm-beheer">Beheer</span></button>
+                            <button class="feature-btn btn-orange" data-perm="beheer"><i class="fas fa-car-crash"></i><span>Wipe Voertuigen</span><small>Alleen voertuigen</small><span class="perm perm-beheer">Beheer</span></button>
+                            <button class="feature-btn btn-yellow" data-perm="beheer"><i class="fas fa-money-bill-wave"></i><span>Wipe Geld</span><small>Alleen geld</small><span class="perm perm-beheer">Beheer</span></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SUPPORT -->
+                <section id="support" class="section">
+                    <div class="page-header"><h2>Support, Tickets & Reports</h2><p>In-game reports, player dossiers en admin notities</p></div>
+                    <div class="grid-2 mb-16" style="grid-template-columns:1.5fr 1fr">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title"><i class="fas fa-ticket-alt"></i> Open Reports</span>
+                                <span class="badge" style="background:rgba(168,85,247,0.12);color:var(--purple)">7 open</span>
+                            </div>
+                            <div class="report-card">
+                                <div class="report-header">
+                                    <div><span class="badge" style="background:rgba(239,68,68,0.12);color:var(--red)">URGENT</span><span style="font-weight:500;margin-left:8px;font-size:13px">Report #1042</span></div>
+                                    <span style="font-size:11px;color:var(--text-muted)">2 min geleden</span>
+                                </div>
+                                <p style="font-size:13px;margin-bottom:4px"><span style="color:var(--accent)">SpelerY</span> rapporteert RDM door <span style="color:var(--red)">PlayerX</span></p>
+                                <p style="font-size:12px;color:var(--text-muted)">"Speler schoot me dood zonder reden bij Legion Square"</p>
+                                <div class="report-actions">
+                                    <button class="btn btn-sm btn-primary" data-perm="staff"><i class="fas fa-hand-paper"></i> Claim <span class="perm perm-staff">Staff</span></button>
+                                    <button class="btn btn-sm btn-success" data-perm="staff"><i class="fas fa-location-arrow"></i> Teleport <span class="perm perm-staff">Staff</span></button>
+                                    <button class="btn btn-sm btn-outline" data-perm="staff"><i class="fas fa-check"></i> Close <span class="perm perm-staff">Staff</span></button>
+                                </div>
+                            </div>
+                            <div class="report-card">
+                                <div class="report-header">
+                                    <div><span class="badge" style="background:rgba(234,179,8,0.12);color:var(--yellow)">NORMAL</span><span style="font-weight:500;margin-left:8px;font-size:13px">Report #1041</span></div>
+                                    <span style="font-size:11px;color:var(--text-muted)">8 min geleden</span>
+                                </div>
+                                <p style="font-size:13px"><span style="color:var(--accent)">NewPlayer</span> vraagt om hulp bij job</p>
+                                <div class="report-actions">
+                                    <button class="btn btn-sm btn-primary" data-perm="staff"><i class="fas fa-hand-paper"></i> Claim <span class="perm perm-staff">Staff</span></button>
+                                    <button class="btn btn-sm btn-success" data-perm="staff"><i class="fas fa-location-arrow"></i> Teleport <span class="perm perm-staff">Staff</span></button>
+                                    <button class="btn btn-sm btn-outline" data-perm="staff"><i class="fas fa-check"></i> Close <span class="perm perm-staff">Staff</span></button>
+                                </div>
+                            </div>
+                            <div style="margin-top:14px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                                <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Wachtrij Status</div>
+                                <div style="font-size:13px;margin-bottom:6px"><span style="color:var(--green);font-weight:600">2</span> staff in dienst · <span style="color:var(--yellow);font-weight:600">3</span> in wachtrij</div>
+                                <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+                                    <div><span style="color:var(--accent)">[1]</span> Supporter_Mike <span style="font-size:10px">(auto prioriteit)</span></div>
+                                    <div><span style="color:var(--accent)">[2]</span> PlayerABC</div>
+                                    <div><span style="color:var(--accent)">[3]</span> RandomGuy</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-id-card"></i> Speler Dossier</span></div>
+                            <input type="text" class="form-control mb-16" placeholder="Zoek: Naam, ID, Discord...">
+                            <div class="player-card">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                                    <div class="player-avatar">PX</div>
+                                    <div><div style="font-weight:600">PlayerX</div><div style="font-size:12px;color:var(--text-muted)">ID: 42 · Discord: playerx#1234</div></div>
+                                </div>
+                                <div class="stat-grid">
+                                    <div class="stat-box"><div class="sl">Speeltijd</div><div class="sv">156 uur</div></div>
+                                    <div class="stat-box"><div class="sl">K/D</div><div class="sv">23 / 45</div></div>
+                                    <div class="stat-box"><div class="sl">Bans</div><div class="sv" style="color:var(--red)">2</div></div>
+                                    <div class="stat-box"><div class="sl">Warnings</div><div class="sv" style="color:var(--yellow)">5</div></div>
+                                </div>
+                                <button class="btn btn-primary btn-block btn-sm">Volledig Dossier</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- COMMUNICATIE -->
+                <section id="communicatie" class="section">
+                    <div class="page-header"><h2>Communicatie, Events & Omroepen</h2><p>Berichten, announcements en event tools</p></div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-comment-dots"></i> In-game Berichten</span></div>
+                            <div class="form-group"><label>System Announcement</label><textarea class="form-control" rows="3" placeholder="Serverbrede melding..."></textarea></div>
+                            <button class="btn btn-warning btn-block mb-16" data-perm="beheer"><i class="fas fa-bullhorn"></i> Verstuur Announcement <span class="perm perm-beheer">Beheer</span></button>
+                            <div class="form-group"><label>Privébericht (DM)</label>
+                                <div class="form-row"><input type="text" class="form-control" placeholder="Speler ID" style="max-width:100px"><input type="text" class="form-control" placeholder="Bericht..."></div>
+                            </div>
+                            <button class="btn btn-primary btn-block mb-16" data-perm="staff"><i class="fas fa-paper-plane"></i> Stuur DM <span class="perm perm-staff">Staff</span></button>
+                            <button class="btn btn-outline btn-block" data-perm="staff"><i class="fas fa-user-shield"></i> Admin Chat Bericht <span class="perm perm-staff">Staff</span></button>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-calendar-star"></i> Event Modus Tools</span></div>
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group" style="flex:1;margin:0"><label>Weer</label>
+                                    <select class="form-control"><option>Zonnig</option><option>Bewolkt</option><option>Regen</option><option>Onweer</option><option>Sneeuw</option><option>Mist</option></select>
+                                </div>
+                                <div class="form-group" style="flex:1;margin:0"><label>Tijdstip</label>
+                                    <select class="form-control"><option>Ochtend (08:00)</option><option>Middag (12:00)</option><option>Avond (18:00)</option><option>Nacht (00:00)</option><option>Freeze Time</option></select>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-block mb-16" data-perm="hogerop"><i class="fas fa-cloud-sun"></i> Weer & Tijd Toepassen <span class="perm perm-hogerop">Hogerop</span></button>
+                            <div class="form-row" style="margin-bottom:10px">
+                                <button class="btn btn-outline" style="flex:1" data-perm="beheer"><i class="fas fa-lightbulb" style="color:var(--yellow)"></i> Blackout <span class="perm perm-beheer">Beheer</span></button>
+                                <button class="btn btn-outline" style="flex:1" data-perm="beheer"><i class="fas fa-shield-alt" style="color:var(--green)"></i> Safezone <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                            <button class="btn btn-outline btn-block" data-perm="hogerop"><i class="fas fa-map-marker-alt" style="color:var(--pink)"></i> Event Spawns (Alle Spelers) <span class="perm perm-hogerop">Hogerop</span></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- AUTOMATISERING -->
+                <section id="automatisering" class="section">
+                    <div class="page-header"><h2>Automatisering & Smart Hooks</h2><p>Auto-moderatie, Discord sync en scheduled tasks</p></div>
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fas fa-robot"></i> Auto-Moderatie Triggers</span></div>
+                            <div class="data-list">
+                                <div class="data-item">
+                                    <div class="left">
+                                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:13px"><i class="fas fa-tshirt"></i></div>
+                                        <div><div style="font-weight:500;font-size:13px">Kleding/Weapon Blacklist</div><div style="font-size:11px;color:var(--text-muted)">Automatische controle via AC</div></div>
+                                    </div>
+                                    <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left">
+                                        <div style="width:32px;height:32px;border-radius:8px;background:rgba(234,179,8,0.12);display:flex;align-items:center;justify-content:center;color:var(--yellow);font-size:13px"><i class="fas fa-money-bill-wave"></i></div>
+                                        <div><div style="font-weight:500;font-size:13px">Verdachte Geldbedragen</div><div style="font-size:11px;color:var(--text-muted)">Alert bij > €10.000.000</div></div>
+                                    </div>
+                                    <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;padding:10px;background:var(--bg-input);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted)">
+                                Actie bij detectie: <span style="color:var(--red);margin-left:6px">[Ban]</span> <span style="color:var(--yellow);margin-left:4px">[Wipe]</span> <span style="color:var(--text-muted);margin-left:4px">[Negeer]</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><span class="card-title"><i class="fab fa-discord"></i> Discord Roles Sync</span></div>
+                            <div class="data-list">
+                                <div class="data-item">
+                                    <div class="left"><div><div style="font-weight:500;font-size:13px">Job → Discord Rol Sync</div><div style="font-size:11px;color:var(--text-muted)">NL politie rangen → Discord rollen</div></div></div>
+                                    <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                                </div>
+                                <div class="data-item">
+                                    <div class="left"><div><div style="font-weight:500;font-size:13px">VIP Rol → In-game Voordelen</div><div style="font-size:11px;color:var(--text-muted)">VIP autos/geld bij rol toewijzing</div></div></div>
+                                    <label class="toggle"><input type="checkbox" checked><span class="slider"></span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="fas fa-calendar-check"></i> Scheduled Tasks</span></div>
+                        <div class="grid-2">
+                            <div style="padding:16px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                                    <div style="width:40px;height:40px;border-radius:10px;background:rgba(59,130,246,0.12);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:16px"><i class="fas fa-comment"></i></div>
+                                    <div><div style="font-weight:550;font-size:13px">Automatische Berichten</div><div style="font-size:11px;color:var(--text-muted)">In-game berichten plannen</div></div>
+                                </div>
+                                <button class="btn btn-primary btn-block btn-sm" data-perm="beheer">Berichten Beheren <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                            <div style="padding:16px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                                    <div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,0.12);display:flex;align-items:center;justify-content:center;color:var(--green);font-size:16px"><i class="fas fa-save"></i></div>
+                                    <div><div style="font-weight:550;font-size:13px">Automatische Opslag</div><div style="font-size:11px;color:var(--text-muted)">Save All Players op schema</div></div>
+                                </div>
+                                <div style="font-size:11px;color:var(--text-muted);padding:8px;background:var(--bg-card);border-radius:6px;margin-bottom:10px">Bij restart: iedereen 2 min van tevoren gekickt + data opgeslagen</div>
+                                <button class="btn btn-success btn-block btn-sm" data-perm="beheer">Schema Beheren <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INSTELLINGEN -->
+                <section id="instellingen" class="section">
+                    <div class="page-header"><h2>Instellingen</h2><p>Algemene panel configuratie</p></div>
+                    <div class="card" style="max-width:500px">
+                        <div class="form-group"><label>Server Naam</label><input type="text" class="form-control" value="Server"></div>
+                        <div class="form-group"><label>Max Spelers</label><input type="number" class="form-control" value="200"></div>
+                        <div class="form-group"><label>Taal</label><select class="form-control"><option selected>Nederlands</option><option>English</option></select></div>
+                        <div class="form-group"><label>Thema</label><select class="form-control"><option selected>Dark (huidig)</option><option>Light</option></select></div>
+                        <button class="btn btn-primary">Opslaan</button>
+                    </div>
+                </section>
+                <!-- PERMISSIES (Beheer) -->
+                
+                <!-- PERMISSIES (Beheer) -->
+                <section id="permissions" class="section">
+                    <div class="page-header">
+                        <h2>Permissies & Discord Rollen</h2>
+                        <p>Koppel Discord rollen en ID's aan ranks — alleen Beheer</p>
+                    </div>
+
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title"><i class="fab fa-discord"></i> Discord Rol → Rank</span>
+                            </div>
+                            <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Wie een van deze Discord-rollen heeft, krijgt automatisch de gekoppelde rank bij login.</p>
+                            <div class="data-list" id="roleMappingList">
+                            </div>
+                            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+                                <div class="form-row" style="margin-bottom:10px">
+                                    <div class="form-group" style="flex:1;margin:0">
+                                        <label>Discord Rol ID</label>
+                                        <input type="text" class="form-control" id="newRoleId" placeholder="Rol ID">
+                                    </div>
+                                    <div class="form-group" style="flex:1;margin:0">
+                                        <label>Rol naam</label>
+                                        <input type="text" class="form-control" id="newRoleName" placeholder="bijv. Trial Staff">
+                                    </div>
+                                    <div class="form-group" style="flex:1;margin:0">
+                                        <label>Rank</label>
+                                        <select class="form-control" id="newRoleRank">
+                                            <option value="staff">Staff</option>
+                                            <option value="hogerop">Hogerop</option>
+                                            <option value="beheer">Beheer</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-block" data-perm="beheer" id="addRoleMapping"><i class="fas fa-plus"></i> Rol koppelen <span class="perm perm-beheer">Beheer</span></button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="card-title"><i class="fas fa-user-plus"></i> Handmatig via Discord ID</span>
+                            </div>
+                            <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Override: wijs een rank toe aan een specifiek Discord ID (heeft voorrang op rollen).</p>
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group" style="flex:2;margin:0">
+                                    <label>Discord ID</label>
+                                    <input type="text" class="form-control" id="manualDiscordId" placeholder="123456789012345678">
+                                </div>
+                                <div class="form-group" style="flex:1;margin:0">
+                                    <label>Rank</label>
+                                    <select class="form-control" id="manualRank">
+                                        <option value="staff">Staff</option>
+                                        <option value="hogerop">Hogerop</option>
+                                        <option value="beheer">Beheer</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-block mb-16" data-perm="beheer" id="addManualUser"><i class="fas fa-plus"></i> Toewijzen <span class="perm perm-beheer">Beheer</span></button>
+
+                            <div class="card-header" style="margin-bottom:10px">
+                                <span class="card-title"><i class="fas fa-users"></i> Handmatige toewijzingen</span>
+                            </div>
+                            <div class="data-list" id="manualUsersList">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-info-circle"></i> Rank Overzicht</span>
+                        </div>
+                        <div class="grid-3">
+                            <div style="padding:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                                <span class="perm perm-staff" style="margin-bottom:8px;display:inline-flex">Staff</span>
+                                <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Warn, Kick, Ban tijdelijk, Heal, Revive, Kill, Spectate, Reports, Live Map, DM's</p>
+                            </div>
+                            <div style="padding:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                                <span class="perm perm-hogerop" style="margin-bottom:8px;display:inline-flex">Hogerop</span>
+                                <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Alles van Staff + Ban permanent, Geld/Items, Jobs, Voertuig eigendom, AC triggers</p>
+                            </div>
+                            <div style="padding:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                                <span class="perm perm-beheer" style="margin-bottom:8px;display:inline-flex">Beheer</span>
+                                <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Alles + HWID Ban, Server, Resources, Whitelist, CK, Wipes, Automatisering, Permissies</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- TO-DO LIJST -->
+                <section id="todo" class="section">
+                    <div class="page-header">
+                        <h2>To-Do Lijst</h2>
+                        <p>Geplande features en backend koppelingen</p>
+                    </div>
+
+                    <div class="card mb-16">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-rocket"></i> Gepland — Nog te bouwen</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Discord Bot Login (OAuth2 backend)</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Backend OAuth actief — vul backend/.env met je Discord gegevens</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)">Hoog</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Permissies Discord rollen + ID (backend)</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">API + opslag actief — rollen/ID’s beheren via Permissies-pagina</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)">Hoog</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">FiveM Server API koppeling</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Alle acties (kick, ban, spawn, etc.) daadwerkelijk uitvoeren op de server</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25)">Hoog</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Live data (spelers, map, stats)</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">WebSocket of polling voor realtime online spelers, map blips, server stats</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(234,179,8,0.12);color:var(--yellow);border:1px solid rgba(234,179,8,0.25)">Medium</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Anti-Cheat integratie</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Triggers, screenshots en flags live ophalen van de AC resource</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(234,179,8,0.12);color:var(--yellow);border:1px solid rgba(234,179,8,0.25)">Medium</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Report systeem ↔ Discord</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">In-game /report verschijnt in Discord + panel, claim/teleport/close werken live</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(234,179,8,0.12);color:var(--yellow);border:1px solid rgba(234,179,8,0.25)">Medium</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Database koppeling</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">MySQL/oxmysql voor spelers, voertuigen, bans, notities, transacties</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(234,179,8,0.12);color:var(--yellow);border:1px solid rgba(234,179,8,0.25)">Medium</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Automatisering activeren</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Auto-moderatie, scheduled tasks, Discord rol-sync daadwerkelijk laten werken</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(100,116,139,0.15);color:var(--text-muted);border:1px solid rgba(100,116,139,0.25)">Laag</span>
+                            </div>
+                            <div class="data-item">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:block"></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px">Audit log / actiegeschiedenis</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Elke staff-actie loggen en doorzoekbaar maken</div>
+                                    </div>
+                                </div>
+                                <span class="perm" style="background:rgba(100,116,139,0.15);color:var(--text-muted);border:1px solid rgba(100,116,139,0.25)">Laag</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-check-circle" style="color:var(--green)"></i> Afgerond</span>
+                        </div>
+                        <div class="data-list">
+                            <div class="data-item" style="opacity:0.6">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-check" style="font-size:10px;color:#fff"></i></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px;text-decoration:line-through">Frontend UI / Dashboard</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Alle pagina's, badges, navigatie per rank</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="data-item" style="opacity:0.6">
+                                <div class="left">
+                                    <span style="width:22px;height:22px;border-radius:6px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas fa-check" style="font-size:10px;color:#fff"></i></span>
+                                    <div>
+                                        <div style="font-weight:500;font-size:13px;text-decoration:line-through">Permissie-indeling (Staff / Hogerop / Beheer)</div>
+                                        <div style="font-size:11px;color:var(--text-muted)">Badges op alle functies, rank-overzicht</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

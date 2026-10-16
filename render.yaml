@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: westkust-staff
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: DISCORD_REDIRECT_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: BOOTSTRAP_DISCORD_ID
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
